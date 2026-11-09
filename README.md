@@ -9,22 +9,23 @@ A small, dependency-free Zsh utility for keeping multiple Claude Code accounts s
 
 ## Install
 
-Clone or download this repository, then run:
+Install with one command:
 
 ```sh
-./install.sh
+curl -fsSL https://raw.githubusercontent.com/su66uu/claude-account-switch/main/install.sh | sh
+```
+
+Then restart Zsh:
+
+```sh
 exec zsh
 ```
 
-The installer copies the plugin to `~/.local/share/claude-account-switch` and adds one `source` line to `~/.zshrc`. Run it again after updating the repository.
+The installer downloads the plugin to `~/.local/share/claude-account-switch` and adds one `source` line to `~/.zshrc`. Re-run the same command to update it.
+
+To inspect the code before installing, clone the repository and run `./install.sh` instead.
 
 ## Set up accounts
-
-Give the account already stored in `~/.claude` a name without moving it:
-
-```sh
-claude account label-default client
-```
 
 Add more accounts:
 
@@ -39,6 +40,12 @@ If an account already has a separate configuration directory, register it instea
 
 ```sh
 claude account add company "$HOME/.claude-company"
+```
+
+Give the account already stored in `~/.claude` a name without moving it:
+
+```sh
+claude account label-default client
 ```
 
 ## Use

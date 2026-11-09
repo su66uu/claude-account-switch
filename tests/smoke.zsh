@@ -50,4 +50,9 @@ grep -Fq 'claude-account-switch.zsh' "$HOME/.zshrc"
 [[ "$(grep -Fc 'source "${XDG_DATA_HOME:-$HOME/.local/share}/claude-account-switch/claude-account-switch.zsh"' "$HOME/.zshrc")" == "1" ]]
 [[ -f "$XDG_DATA_HOME/claude-account-switch/claude-account-switch.zsh" ]]
 
+rm "$XDG_DATA_HOME/claude-account-switch/claude-account-switch.zsh"
+CLAUDE_ACCOUNT_SWITCH_PLUGIN_URL="file://$repo_root/claude-account-switch.zsh" \
+  sh -s < "$repo_root/install.sh" >/dev/null
+[[ -f "$XDG_DATA_HOME/claude-account-switch/claude-account-switch.zsh" ]]
+
 print "Smoke test passed."
