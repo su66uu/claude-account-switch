@@ -51,10 +51,11 @@ claude account label-default client
 ## Use
 
 ```sh
-claude account list       # List accounts; * marks the active one
-claude switch             # Choose interactively
-claude switch personal    # Switch directly
-claude                    # Start Claude Code with the active account
+claude account list          # List accounts; * marks the active one
+claude account list --active # Print only the active account name
+claude switch                # Choose interactively
+claude switch personal       # Switch directly
+claude                       # Start Claude Code with the active account
 ```
 
 All normal Claude Code arguments continue to work:
@@ -62,6 +63,12 @@ All normal Claude Code arguments continue to work:
 ```sh
 claude --continue
 claude --resume
+```
+
+Use the active account in scripts without parsing the formatted list:
+
+```sh
+active_account="$(claude account list --active)"
 ```
 
 Switching affects new Claude Code processes only. Run `/status` inside Claude Code when you need to verify the active account or organization.

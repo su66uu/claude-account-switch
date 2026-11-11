@@ -11,7 +11,7 @@ _claude_account_switch_usage() {
 Usage:
   claude account label-default <name>
   claude account add <name> [existing-config-directory]
-  claude account list
+  claude account list [--active]
   claude switch [name]
 EOF
 }
@@ -115,6 +115,17 @@ claude() {
       list)
         active_name=""
         [[ -r "$active_file" ]] && active_name="$(<"$active_file")"
+
+        if [[ "$name" == "--active" ]]; then
+          [[ -n "$active_name" && -f "$profiles_dir/$active_name" ]] || return 1
+          print -r -- "$active_name"
+          return
+        fi
+        if [[ -n "$name" ]]; then
+          print -u2 "Unknown option for 'claude account list': $name"
+          return 2
+        fi
+
         account_names=("$profiles_dir"/*(N.))
 
         if (( ${#account_names} == 0 )); then

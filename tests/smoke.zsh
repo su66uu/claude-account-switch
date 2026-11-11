@@ -21,9 +21,15 @@ chmod +x "$test_root/bin/claude"
 
 source "$repo_root/claude-account-switch.zsh"
 
+if claude account list --active >/dev/null 2>&1; then
+  print -u2 "Active account unexpectedly exists before setup."
+  exit 1
+fi
+
 claude account label-default client >/dev/null
 claude account add personal >/dev/null
 claude switch personal >/dev/null
+[[ "$(claude account list --active)" == "personal" ]]
 
 expected_config="$XDG_DATA_HOME/claude-account-switch/profiles/personal"
 [[ "$(claude --version)" == "config=$expected_config args=--version" ]]
@@ -33,6 +39,7 @@ claude switch client >/dev/null
 
 claude account label-default client-renamed >/dev/null
 [[ "$(claude account list)" == *"client-renamed"* ]]
+[[ "$(claude account list --active)" == "client-renamed" ]]
 
 mkdir -p "$test_root/existing-config"
 claude account add work "$test_root/existing-config" >/dev/null
