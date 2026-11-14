@@ -53,7 +53,7 @@ claude account label-default client
 ```sh
 claude account list          # List accounts; * marks the active one
 claude account list --active # Print only the active account name
-claude switch                # Choose interactively
+claude switch                # Choose scope and account interactively
 claude switch personal       # Switch directly
 claude switch client --project # Switch only the current project
 claude switch --project      # Choose a project account interactively

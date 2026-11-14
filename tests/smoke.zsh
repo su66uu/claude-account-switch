@@ -54,7 +54,16 @@ project_root="${project_root:A}"
   [[ "$(claude account list --active)" == "client" ]]
 )
 
-claude switch client >/dev/null
+interactive_project="$test_root/projects/interactive"
+mkdir -p "$interactive_project"
+(
+  cd "$interactive_project"
+  claude switch <<< $'1\n1' >/dev/null 2>&1
+  [[ "$(claude account list --active)" == "client" ]]
+)
+[[ "$(claude account list --active)" == "personal" ]]
+
+claude switch <<< $'2\n1' >/dev/null 2>&1
 [[ "$(claude --version)" == "config=unset args=--version" ]]
 
 claude account label-default client-renamed >/dev/null
@@ -69,7 +78,7 @@ non_git_project="$test_root/projects/notes"
 mkdir -p "$non_git_project"
 (
   cd "$non_git_project"
-  claude switch personal --project >/dev/null
+  claude switch --project <<< '2' >/dev/null 2>&1
   [[ "$(claude account list --active)" == "personal" ]]
   [[ "$(claude --version)" == "config=$expected_config args=--version" ]]
 )

@@ -54,7 +54,7 @@ claude() {
   local subcommand="$2"
   local name="$3"
   local config_dir="$4"
-  local profile_file mapping old_name active_name file project_file project_root
+  local profile_file mapping old_name active_name file project_file project_root scope
   local switch_project=0
   local PS3="Select Claude account: "
   local -a account_names
@@ -218,6 +218,17 @@ claude() {
         return 2
       fi
 
+      if (( ! switch_project )); then
+        project_root="$(_claude_account_switch_project_root)" || return 1
+        PS3="Select switch scope: "
+        select scope in "Current project ($project_root)" "Global default"; do
+          [[ -n "$scope" ]] && break
+        done
+        [[ -n "$scope" ]] || return 1
+        [[ "$REPLY" == "1" ]] && switch_project=1
+      fi
+
+      PS3="Select Claude account: "
       select name in "${account_names[@]}"; do
         [[ -n "$name" ]] && break
       done
@@ -231,7 +242,7 @@ claude() {
     fi
 
     if (( switch_project )); then
-      project_root="$(_claude_account_switch_project_root)" || return 1
+      [[ -n "$project_root" ]] || project_root="$(_claude_account_switch_project_root)" || return 1
       project_file="$projects_dir/${project_root#/}/account"
       mkdir -p "${project_file:h}" || return 1
       print -r -- "$name" > "$project_file"
