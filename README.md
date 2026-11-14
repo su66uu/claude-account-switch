@@ -55,8 +55,20 @@ claude account list          # List accounts; * marks the active one
 claude account list --active # Print only the active account name
 claude switch                # Choose interactively
 claude switch personal       # Switch directly
+claude switch client --project # Switch only the current project
+claude switch --project      # Choose a project account interactively
 claude                       # Start Claude Code with the active account
 ```
+
+A project switch applies to the entire Git repository, including its subdirectories. Outside a Git repository, it applies to the current directory. Other projects continue using their own project account or the global account selected by `claude switch <name>`.
+
+The active account is resolved in this order:
+
+1. Current project account
+2. Global active account
+3. Claude Code's default `~/.claude` configuration
+
+Project mappings are path-based. If you move or rename a project, run `claude switch <name> --project` again from its new location.
 
 All normal Claude Code arguments continue to work:
 
@@ -76,6 +88,7 @@ Switching affects new Claude Code processes only. Run `/status` inside Claude Co
 ## Storage
 
 - Account registry: `${XDG_CONFIG_HOME:-~/.config}/claude-account-switch`
+- Project mappings: `${XDG_CONFIG_HOME:-~/.config}/claude-account-switch/projects`
 - New account data: `${XDG_DATA_HOME:-~/.local/share}/claude-account-switch/profiles`
 - Existing default account: `~/.claude` (unchanged)
 

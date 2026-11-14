@@ -34,12 +34,45 @@ claude switch personal >/dev/null
 expected_config="$XDG_DATA_HOME/claude-account-switch/profiles/personal"
 [[ "$(claude --version)" == "config=$expected_config args=--version" ]]
 
+project_root="$test_root/projects/client-app"
+project_nested="$project_root/packages/web"
+mkdir -p "$project_nested" "$project_root/.git"
+project_root="${project_root:A}"
+
+(
+  cd "$project_nested"
+  claude switch client --project >/dev/null
+  [[ "$(claude account list --active)" == "client" ]]
+  [[ "$(claude --version)" == "config=unset args=--version" ]]
+)
+
+[[ "$(claude account list --active)" == "personal" ]]
+[[ -f "$XDG_CONFIG_HOME/claude-account-switch/projects/${project_root#/}/account" ]]
+
+(
+  cd "$project_root"
+  [[ "$(claude account list --active)" == "client" ]]
+)
+
 claude switch client >/dev/null
 [[ "$(claude --version)" == "config=unset args=--version" ]]
 
 claude account label-default client-renamed >/dev/null
 [[ "$(claude account list)" == *"client-renamed"* ]]
 [[ "$(claude account list --active)" == "client-renamed" ]]
+(
+  cd "$project_root"
+  [[ "$(claude account list --active)" == "client-renamed" ]]
+)
+
+non_git_project="$test_root/projects/notes"
+mkdir -p "$non_git_project"
+(
+  cd "$non_git_project"
+  claude switch personal --project >/dev/null
+  [[ "$(claude account list --active)" == "personal" ]]
+  [[ "$(claude --version)" == "config=$expected_config args=--version" ]]
+)
 
 mkdir -p "$test_root/existing-config"
 claude account add work "$test_root/existing-config" >/dev/null

@@ -6,13 +6,39 @@ _claude_account_switch_valid_name() {
   esac
 }
 
+_claude_account_switch_project_root() {
+  local root="${PWD:A}"
+
+  while [[ "$root" != "/" && ! -e "$root/.git" ]]; do
+    root="${root:h}"
+  done
+
+  [[ -e "$root/.git" ]] || root="${PWD:A}"
+  print -r -- "$root"
+}
+
+_claude_account_switch_project_file() {
+  local project_root="$(_claude_account_switch_project_root)" || return 1
+  print -r -- "$1/${project_root#/}/account"
+}
+
+_claude_account_switch_active_name() {
+  local project_file="$(_claude_account_switch_project_file "$2")" || return 1
+
+  if [[ -r "$project_file" ]]; then
+    print -r -- "$(<"$project_file")"
+  elif [[ -r "$1" ]]; then
+    print -r -- "$(<"$1")"
+  fi
+}
+
 _claude_account_switch_usage() {
   cat <<'EOF'
 Usage:
   claude account label-default <name>
   claude account add <name> [existing-config-directory]
   claude account list [--active]
-  claude switch [name]
+  claude switch [name] [--project]
 EOF
 }
 
@@ -22,17 +48,19 @@ claude() {
   local config_root="${XDG_CONFIG_HOME:-$HOME/.config}/claude-account-switch"
   local data_root="${XDG_DATA_HOME:-$HOME/.local/share}/claude-account-switch"
   local profiles_dir="$config_root/profiles"
+  local projects_dir="$config_root/projects"
   local active_file="$config_root/active"
   local command_name="$1"
   local subcommand="$2"
   local name="$3"
   local config_dir="$4"
-  local profile_file mapping old_name active_name file
+  local profile_file mapping old_name active_name file project_file project_root
+  local switch_project=0
   local PS3="Select Claude account: "
   local -a account_names
 
-  mkdir -p "$profiles_dir" "$data_root/profiles" || return 1
-  chmod 700 "$config_root" "$profiles_dir" "$data_root" "$data_root/profiles" 2>/dev/null
+  mkdir -p "$profiles_dir" "$projects_dir" "$data_root/profiles" || return 1
+  chmod 700 "$config_root" "$profiles_dir" "$projects_dir" "$data_root" "$data_root/profiles" 2>/dev/null
 
   if [[ "$command_name" == "account" ]]; then
     case "$subcommand" in
@@ -62,6 +90,12 @@ claude() {
             return 2
           fi
           mv "$profiles_dir/$old_name" "$profile_file" || return 1
+
+          for project_file in "$projects_dir"/**/account(ND.); do
+            if [[ "$(<"$project_file")" == "$old_name" ]]; then
+              print -r -- "$name" > "$project_file"
+            fi
+          done
         else
           print -r -- "@default" > "$profile_file"
         fi
@@ -113,8 +147,7 @@ claude() {
         ;;
 
       list)
-        active_name=""
-        [[ -r "$active_file" ]] && active_name="$(<"$active_file")"
+        active_name="$(_claude_account_switch_active_name "$active_file" "$projects_dir")" || return 1
 
         if [[ "$name" == "--active" ]]; then
           [[ -n "$active_name" && -f "$profiles_dir/$active_name" ]] || return 1
@@ -157,6 +190,25 @@ claude() {
   if [[ "$command_name" == "switch" ]]; then
     name="$2"
 
+    if [[ "$name" == "--project" ]]; then
+      switch_project=1
+      name=""
+    elif [[ "$name" == --* ]]; then
+      print -u2 "Unknown option for 'claude switch': $name"
+      return 2
+    fi
+
+    if [[ "$3" == "--project" ]]; then
+      switch_project=1
+    elif [[ -n "$3" ]]; then
+      print -u2 "Unknown option for 'claude switch': $3"
+      return 2
+    fi
+    if [[ -n "$4" ]]; then
+      _claude_account_switch_usage >&2
+      return 2
+    fi
+
     if [[ -z "$name" ]]; then
       for file in "$profiles_dir"/*(N.); do
         account_names+=("${file:t}")
@@ -178,12 +230,21 @@ claude() {
       return 2
     fi
 
-    print -r -- "$name" > "$active_file"
-    print "Claude account switched to: $name"
+    if (( switch_project )); then
+      project_root="$(_claude_account_switch_project_root)" || return 1
+      project_file="$projects_dir/${project_root#/}/account"
+      mkdir -p "${project_file:h}" || return 1
+      print -r -- "$name" > "$project_file"
+      print "Claude account switched to: $name (project: $project_root)"
+    else
+      print -r -- "$name" > "$active_file"
+      print "Claude account switched to: $name"
+    fi
     return
   fi
 
-  if [[ ! -r "$active_file" ]]; then
+  name="$(_claude_account_switch_active_name "$active_file" "$projects_dir")" || return 1
+  if [[ -z "$name" ]]; then
     (
       unset CLAUDE_CONFIG_DIR
       command claude "$@"
@@ -191,7 +252,6 @@ claude() {
     return $?
   fi
 
-  name="$(<"$active_file")"
   profile_file="$profiles_dir/$name"
   if [[ ! -r "$profile_file" ]]; then
     print -u2 "Active Claude account no longer exists: $name"
